@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"encoding/json"
+
+	"github.com/gorilla/websocket"
+)
 
 //client is a single chatting user
 
@@ -27,11 +31,24 @@ func (c *client) read() {
 	}
 }
 
+type fullMsg struct {
+	Msg  string `json:"msg"`
+	Name string `json:"name"`
+}
+
 func (c *client) write() {
 	defer c.socket.Close()
 
 	for msg := range c.recieve {
-		err := c.socket.WriteMessage(websocket.TextMessage, msg)
+		message := &fullMsg{
+			Msg:  string(msg),
+			Name: c.name,
+		}
+		jsonData, err := json.Marshal(message)
+		if err != nil {
+			return
+		}
+		err = c.socket.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
 			return
 		}
